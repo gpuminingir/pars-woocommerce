@@ -71,7 +71,7 @@ function PARSWC__withdraw ()
     $address = $parswc_settings['address'];
 
     try{
-      $wallet_api = New ForkNoteWalletd("http://127.0.0.1:18888");
+      $wallet_api = New ForkNoteWalletd("http://127.0.0.1:8070");
       $address_balance = $wallet_api->getBalance($address);
     }
     catch(Exception $e) {

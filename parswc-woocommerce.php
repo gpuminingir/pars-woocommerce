@@ -1,12 +1,10 @@
 <?php
 /*
 
-Plugin Name: Karbo for WooCommerce
-Plugin URI: https://github.com/Karbovanets/karbo-woocommerce/
-Description: Karbo for WooCommerce plugin allows you to accept payments in Karbos for physical and digital products at your WooCommerce-powered online store.
+Plugin Name: ParsiCoin for WooCommerce
+Plugin URI: https://github.com/parsicoin/pars-woocommerce/
+Description: ParsiCoin for WooCommerce plugin allows you to accept payments in ParsiCoins for physical and digital products at your WooCommerce-powered online store.
 Version: 1.0
-Author: KittyCatTech
-Author URI: https://github.com/Karbovanets/karbo-woocommerce/
 License: BipCot NoGov Software License bipcot.org
 
 */

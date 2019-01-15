@@ -15,7 +15,7 @@ function PARSWC__generate_new_ParsiCoin_payment_id ($parswc_settings=false, $ord
   if (!$parswc_settings)
     $parswc_settings = PARSWC__get_settings ();
 
-  $wallet_api = New ForkNoteWalletd("http://127.0.0.1:18888");
+  $wallet_api = New ForkNoteWalletd("http://127.0.0.1:8070");
   $new_pars_payment_id = $wallet_api->makePaymentId();
 
   try {
@@ -96,7 +96,7 @@ function PARSWC__getreceivedbyaddress_info ($address_request_array, $parswc_sett
 	$api_timeout            = $address_request_array['api_timeout'];
 
   $funds_received = false;
-  $fnw = New ForkNoteWalletd("http://127.0.0.1:18888");
+  $fnw = New ForkNoteWalletd("http://127.0.0.1:8070");
   $status = $fnw->getStatus();
 
   $t = $fnw->getTransactions( $status["blockCount"] - 50000, false, 50000, $pars_payment_id, [$pars_address]);
@@ -470,7 +470,7 @@ function PARSWC__is_gateway_valid_for_use (&$ret_reason_message=NULL)
           $address = $parswc_settings['address'];
 
           try{
-            $wallet_api = New ForkNoteWalletd("http://127.0.0.1:18888");
+            $wallet_api = New ForkNoteWalletd("http://127.0.0.1:8070");
             $address_balance = $wallet_api->getBalance($address);
           }
           catch(Exception $e) {

@@ -102,7 +102,7 @@ function PARSWC__plugins_loaded__load_ParsiCoin_gateway ()
 	    	
 	    	else if ($this->service_provider=='local_wallet')
 	    	{
-	    		$wallet_api = New ForkNoteWalletd("http://127.0.0.1:18888");
+	    		$wallet_api = New ForkNoteWalletd("http://127.0.0.1:8070");
 	    		$parswc_settings = PARSWC__get_settings();
           		$address = $parswc_settings['address'];
 	    		if (!$address)
@@ -398,7 +398,7 @@ function PARSWC__plugins_loaded__load_ParsiCoin_gateway ()
   		$ret_info_array = array();
 
 
-               $wallet_api = New ForkNoteWalletd("http://127.0.0.1:18888");
+               $wallet_api = New ForkNoteWalletd("http://127.0.0.1:8070");
 
                $parsicoin_payment_id = PARSWC__generate_new_ParsiCoin_payment_id($parswc_settings, $order_info);
 
