@@ -6,17 +6,17 @@ https://github.com/Karbovanets/karbo-woocommerce/
 
 
 //===========================================================================
-function KRBWC__generate_new_Karbo_payment_id ($krbwc_settings=false, $order_info)
+function PARSWC__generate_new_ParsiCoin_payment_id ($parswc_settings=false, $order_info)
 {
   global $wpdb;
 
-  $krb_payments_table_name = $wpdb->prefix . 'krbwc_krb_payments';
+  $pars_payments_table_name = $wpdb->prefix . 'parswc_pars_payments';
 
-  if (!$krbwc_settings)
-    $krbwc_settings = KRBWC__get_settings ();
+  if (!$parswc_settings)
+    $parswc_settings = PARSWC__get_settings ();
 
   $wallet_api = New ForkNoteWalletd("http://127.0.0.1:18888");
-  $new_krb_payment_id = $wallet_api->makePaymentId();
+  $new_pars_payment_id = $wallet_api->makePaymentId();
 
   try {
     $status = $wallet_api->getStatus();
@@ -25,17 +25,17 @@ function KRBWC__generate_new_Karbo_payment_id ($krbwc_settings=false, $order_inf
     $next_key_index = 0;
   }
 
-  $krb_address = $krbwc_settings['address'];
+  $pars_address = $parswc_settings['address'];
 
   $address_request_array = array();
 
         // Retrieve current balance at address considering required confirmations number and api_timemout value.
-  $address_request_array['krb_address'] = $krb_address;
-  $address_request_array['krb_payment_id'] = $new_krb_payment_id;
+  $address_request_array['pars_address'] = $pars_address;
+  $address_request_array['pars_payment_id'] = $new_pars_payment_id;
   $address_request_array['block_index'] = 100000; //@TODO variable for starting block to check for payment id
   $address_request_array['required_confirmations'] = 0;
-  $address_request_array['api_timeout'] = $krbwc_settings['blockchain_api_timeout_secs'];
-  $ret_info_array = KRBWC__getreceivedbyaddress_info ($address_request_array, $krbwc_settings);
+  $address_request_array['api_timeout'] = $parswc_settings['blockchain_api_timeout_secs'];
+  $ret_info_array = PARSWC__getreceivedbyaddress_info ($address_request_array, $parswc_settings);
   // $total_new_keys_generated ++;
 
   if ($ret_info_array['balance'] === false)
@@ -52,20 +52,20 @@ function KRBWC__generate_new_Karbo_payment_id ($krbwc_settings=false, $order_inf
   // Prepare `address_meta` field for this clean address and payment_id.
   $address_meta['orders'] = array();
   array_unshift ($address_meta['orders'], $order_info);    // Prepend new order to array of orders
-  $address_meta_serialized = KRBWC_serialize_address_meta ($address_meta);
+  $address_meta_serialized = PARSWC_serialize_address_meta ($address_meta);
   //$remote_addr  = $order_info['requested_by_ip'];
 
   // Insert newly generated address into DB
-  $query = "INSERT INTO `$krb_payments_table_name` (`krb_address`, `krb_payment_id`, `origin_id`, `index_in_wallet`, `status`, `total_received_funds`, `received_funds_checked_at`, `assigned_at`, `address_meta`) VALUES ('$krb_address', '$new_krb_payment_id', 'none', '$next_key_index', '$status', '$funds_received', '$received_funds_checked_at_time', '$assigned_at_time', '$address_meta_serialized');";
+  $query = "INSERT INTO `$pars_payments_table_name` (`pars_address`, `pars_payment_id`, `origin_id`, `index_in_wallet`, `status`, `total_received_funds`, `received_funds_checked_at`, `assigned_at`, `address_meta`) VALUES ('$pars_address', '$new_pars_payment_id', 'none', '$next_key_index', '$status', '$funds_received', '$received_funds_checked_at_time', '$assigned_at_time', '$address_meta_serialized');";
   $ret_code = $wpdb->query($query);
 
-  return $new_krb_payment_id;
+  return $new_pars_payment_id;
 }
 //===========================================================================
 
 //===========================================================================
 // Function makes sure that returned value is valid array
-function KRBWC_unserialize_address_meta ($flat_address_meta)
+function PARSWC_unserialize_address_meta ($flat_address_meta)
 {
    $unserialized = @unserialize($flat_address_meta);
    if (is_array($unserialized))
@@ -76,35 +76,21 @@ function KRBWC_unserialize_address_meta ($flat_address_meta)
 
 //===========================================================================
 // Function makes sure that value is ready to be stored in DB
-function KRBWC_serialize_address_meta ($address_meta_arr)
+function PARSWC_serialize_address_meta ($address_meta_arr)
 {
-   return KRBWC__safe_string_escape(serialize($address_meta_arr));
+   return PARSWC__safe_string_escape(serialize($address_meta_arr));
 }
 //===========================================================================
 
 //===========================================================================
-/*
-$address_request_array = array (
-  'krb_payment_id'            => '1xxxxxxx',
-  'required_confirmations' => '6',
-  'api_timeout'						 => 10,
-  );
 
-$ret_info_array = array (
-  'result'                      => 'success',
-  'message'                     => "",
-  'host_reply_raw'              => "",
-  'balance'                     => false == error, else - balance
-  );
-*/
-
-function KRBWC__getreceivedbyaddress_info ($address_request_array, $krbwc_settings=false)
+function PARSWC__getreceivedbyaddress_info ($address_request_array, $parswc_settings=false)
 {
-	if (!$krbwc_settings)
-  	$krbwc_settings = KRBWC__get_settings ();
+	if (!$parswc_settings)
+  	$parswc_settings = PARSWC__get_settings ();
 
-  $krb_address            = $address_request_array['krb_address'];
-	$krb_payment_id         = $address_request_array['krb_payment_id'];
+  $pars_address            = $address_request_array['pars_address'];
+	$pars_payment_id         = $address_request_array['pars_payment_id'];
   $first_block_index      = $address_request_array['block_index'];
 	$required_confirmations = $address_request_array['required_confirmations'];
 	$api_timeout            = $address_request_array['api_timeout'];
@@ -113,7 +99,7 @@ function KRBWC__getreceivedbyaddress_info ($address_request_array, $krbwc_settin
   $fnw = New ForkNoteWalletd("http://127.0.0.1:18888");
   $status = $fnw->getStatus();
 
-  $t = $fnw->getTransactions( $status["blockCount"] - 50000, false, 50000, $krb_payment_id, [$krb_address]);
+  $t = $fnw->getTransactions( $status["blockCount"] - 50000, false, 50000, $pars_payment_id, [$pars_address]);
   // print_r( $t );
 
   $total = 0;
@@ -127,7 +113,7 @@ function KRBWC__getreceivedbyaddress_info ($address_request_array, $krbwc_settin
         $funds_received = $bt['amount'];
         $blockIndex = $bt['blockIndex'];
         if (is_numeric($funds_received)) {
-          $funds_received = sprintf("%.12f", $funds_received / 1000000000000.0);
+          $funds_received = sprintf("%.8f", $funds_received / 100000000.0);
           $confirmations = ($status["blockCount"] - $blockIndex);
           //echo "Recieved: $funds_received in block: $blockIndex ($confirmations confirmations) " .$transaction['blockHash'] ."<br>\n";
           if ($confirmations >= $required_confirmations)
@@ -163,7 +149,7 @@ function KRBWC__getreceivedbyaddress_info ($address_request_array, $krbwc_settin
 
 //===========================================================================
 // Returns:
-//    success: number of currency units (dollars, etc...) would take to convert to 1 Karbo, ex: "15.32476".
+//    success: number of currency units (dollars, etc...) would take to convert to 1 PARS, ex: "15.32476".
 //    failure: false
 //
 // $currency_code, one of: USD, AUD, CAD, CHF, CNY, DKK, EUR, GBP, HKD, JPY, NZD, PLN, RUB, SEK, SGD, THB
@@ -173,29 +159,29 @@ function KRBWC__getreceivedbyaddress_info ($address_request_array, $krbwc_settin
 //
 // $get_ticker_string - true - HTML formatted text message instead of pure number returned.
 
-function KRBWC__get_exchange_rate_per_Karbo ($currency_code, $rate_retrieval_method = 'getfirst', $get_ticker_string=false)
+function PARSWC__get_exchange_rate_per_ParsiCoin ($currency_code, $rate_retrieval_method = 'getfirst', $get_ticker_string=false)
 {
-   if ($currency_code == 'KRB')
+   if ($currency_code == 'ParsiCoin')
       return "1.00";   // 1:1
 
-	$krbwc_settings = KRBWC__get_settings ();
-  $exchange_rate_type = $krbwc_settings['exchange_rate_type'];
-  $exchange_multiplier = $krbwc_settings['exchange_multiplier'];
+	$parswc_settings = PARSWC__get_settings ();
+  $exchange_rate_type = $parswc_settings['exchange_rate_type'];
+  $exchange_multiplier = $parswc_settings['exchange_multiplier'];
   if (!$exchange_multiplier)
     $exchange_multiplier = 1;
 
 	$current_time  = time();
 	$cache_hit     = false;
 	$requested_cache_method_type = $rate_retrieval_method . '|' . $exchange_rate_type;
-	$ticker_string = "<span style='color:#222;'>According to your settings (including multiplier), current calculated rate for 1 Karbo (in {$currency_code})={{{EXCHANGE_RATE}}}</span>";
+	$ticker_string = "<span style='color:#222;'>According to your settings (including multiplier), current calculated rate for 1 ParsiCoin (in {$currency_code})={{{EXCHANGE_RATE}}}</span>";
 	$ticker_string_error = "<span style='color:red;background-color:#FFA'>WARNING: Cannot determine exchange rates (for '$currency_code')! {{{ERROR_MESSAGE}}} Make sure your PHP settings are configured properly and your server can (is allowed to) connect to external WEB services via PHP.</wspan>";
 
 
-	$this_currency_info = @$krbwc_settings['exchange_rates'][$currency_code][$requested_cache_method_type];
+	$this_currency_info = @$parswc_settings['exchange_rates'][$currency_code][$requested_cache_method_type];
 	if ($this_currency_info && isset($this_currency_info['time-last-checked']))
 	{
 	  $delta = $current_time - $this_currency_info['time-last-checked'];
-	  if ($delta < (@$krbwc_settings['cache_exchange_rates_for_minutes'] * 60))
+	  if ($delta < (@$parswc_settings['cache_exchange_rates_for_minutes'] * 60))
 	  {
 
 	     // Exchange rates cache hit
@@ -208,10 +194,10 @@ function KRBWC__get_exchange_rate_per_Karbo ($currency_code, $rate_retrieval_met
 	  }
 	}
 
-  $exchange_rate = KRBWC__get_exchange_rate_from_cryptocompare($currency_code, $exchange_rate_type, $krbwc_settings); 
+  $exchange_rate = PARSWC__get_exchange_rate_from_cryptocompare($currency_code, $exchange_rate_type, $parswc_settings); 
 
   // Save new currency exchange rate info in cache
-  KRBWC__update_exchange_rate_cache ($currency_code, $requested_cache_method_type, $exchange_rate);
+  PARSWC__update_exchange_rate_cache ($currency_code, $requested_cache_method_type, $exchange_rate);
 
 	if ($get_ticker_string)
 	{
@@ -223,7 +209,7 @@ function KRBWC__get_exchange_rate_per_Karbo ($currency_code, $rate_retrieval_met
 		{
 			$extra_error_message = "";
 			$fns = array ('file_get_contents', 'curl_init', 'curl_setopt', 'curl_setopt_array', 'curl_exec');
-			$fns = array_filter ($fns, 'KRBWC__function_not_exists');
+			$fns = array_filter ($fns, 'PARSWC__function_not_exists');
 
 			if (count($fns))
 				$extra_error_message = "The following PHP functions are disabled on your server: " . implode (", ", $fns) . ".";
@@ -237,27 +223,27 @@ function KRBWC__get_exchange_rate_per_Karbo ($currency_code, $rate_retrieval_met
 //===========================================================================
 
 //===========================================================================
-function KRBWC__function_not_exists ($fname) { return !function_exists($fname); }
+function PARSWC__function_not_exists ($fname) { return !function_exists($fname); }
 //===========================================================================
 
 //===========================================================================
-function KRBWC__update_exchange_rate_cache ($currency_code, $requested_cache_method_type, $exchange_rate)
+function PARSWC__update_exchange_rate_cache ($currency_code, $requested_cache_method_type, $exchange_rate)
 {
   // Save new currency exchange rate info in cache
-  $krbwc_settings = KRBWC__get_settings ();   // Re-get settings in case other piece updated something while we were pulling exchange rate API's...
-  $krbwc_settings['exchange_rates'][$currency_code][$requested_cache_method_type]['time-last-checked'] = time();
-  $krbwc_settings['exchange_rates'][$currency_code][$requested_cache_method_type]['exchange_rate'] = $exchange_rate;
-  KRBWC__update_settings ($krbwc_settings);
+  $parswc_settings = PARSWC__get_settings ();   // Re-get settings in case other piece updated something while we were pulling exchange rate API's...
+  $parswc_settings['exchange_rates'][$currency_code][$requested_cache_method_type]['time-last-checked'] = time();
+  $parswc_settings['exchange_rates'][$currency_code][$requested_cache_method_type]['exchange_rate'] = $exchange_rate;
+  PARSWC__update_settings ($parswc_settings);
 
 }
 //===========================================================================
 
 //===========================================================================
 // $rate_type: 'vwap' | 'realtime' | 'bestrate'
-function KRBWC__get_exchange_rate_from_cryptocompare ($currency_code, $rate_type, $krbwc_settings)
+function PARSWC__get_exchange_rate_from_cryptocompare ($currency_code, $rate_type, $parswc_settings)
 {
- $source_url = "https://min-api.cryptocompare.com/data/price?fsym=KRB&tsyms=" . $currency_code;
- $result = @KRBWC__file_get_contents ($source_url, false, $krbwc_settings['exchange_rate_api_timeout_secs']);
+ $source_url = "https://api.coingecko.com/api/v3/simple/price?ids=parsicoin&vs_currencies=" . $currency_code;
+ $result = @PARSWC__file_get_contents ($source_url, false, $parswc_settings['exchange_rate_api_timeout_secs']);
 
  $rate_obj = @json_decode(trim($result), true);
 
@@ -272,7 +258,7 @@ function KRBWC__get_exchange_rate_from_cryptocompare ($currency_code, $rate_type
    Success => content
    Error   => if ($return_content_on_error == true) $content; else FALSE;
 */
-function KRBWC__file_get_contents ($url, $return_content_on_error=false, $timeout=60, $user_agent=FALSE, $is_post=false, $post_data="")
+function PARSWC__file_get_contents ($url, $return_content_on_error=false, $timeout=60, $user_agent=FALSE, $is_post=false, $post_data="")
 {
 
    if (!function_exists('curl_init'))
@@ -301,11 +287,11 @@ function KRBWC__file_get_contents ($url, $return_content_on_error=false, $timeou
 			{
 				$safetied = $v;
 				if (is_object($safetied))
-					$safetied = KRBWC__object_to_array($safetied);
+					$safetied = PARSWC__object_to_array($safetied);
 				if (is_array($safetied))
 				{
 					$safetied = serialize($safetied);
-					$safetied = $p . str_replace('=', '_', KRBWC__base64_encode($safetied));
+					$safetied = $p . str_replace('=', '_', PARSWC__base64_encode($safetied));
 					$new_post_data[$k] = $safetied;
 				}
 			}
@@ -351,17 +337,17 @@ function KRBWC__file_get_contents ($url, $return_content_on_error=false, $timeou
 //===========================================================================
 
 //===========================================================================
-function KRBWC__object_to_array ($object)
+function PARSWC__object_to_array ($object)
 {
 	if (!is_object($object) && !is_array($object))
     return $object;
-  return array_map('KRBWC__object_to_array', (array) $object);
+  return array_map('PARSWC__object_to_array', (array) $object);
 }
 //===========================================================================
 
 //===========================================================================
 // Credits: http://www.php.net/manual/en/function.mysql-real-escape-string.php#100854
-function KRBWC__safe_string_escape ($str="")
+function PARSWC__safe_string_escape ($str="")
 {
    $len=strlen($str);
    $escapeCount=0;
@@ -397,13 +383,13 @@ function KRBWC__safe_string_escape ($str="")
 
 //===========================================================================
 // Syntax:
-//    KRBWC__log_event (__FILE__, __LINE__, "Hi!");
-//    KRBWC__log_event (__FILE__, __LINE__, "Hi!", "/..");
-//    KRBWC__log_event (__FILE__, __LINE__, "Hi!", "", "another_log.php");
-function KRBWC__log_event ($filename, $linenum, $message, $prepend_path="", $log_file_name='__log.php')
+//    PARSWC__log_event (__FILE__, __LINE__, "Hi!");
+//    PARSWC__log_event (__FILE__, __LINE__, "Hi!", "/..");
+//    PARSWC__log_event (__FILE__, __LINE__, "Hi!", "", "another_log.php");
+function PARSWC__log_event ($filename, $linenum, $message, $prepend_path="", $log_file_name='__log.php')
 {
    $log_filename   = dirname(__FILE__) . $prepend_path . '/' . $log_file_name;
-   $logfile_header = "<?php exit(':-)'); ?>\n" . '/* =============== KarboWC LOG file =============== */' . "\r\n";
+   $logfile_header = "<?php exit(':-)'); ?>\n" . '/* =============== ParsiCoinWC LOG file =============== */' . "\r\n";
    $logfile_tail   = "\r\nEND";
 
    // Delete too long logfiles.
@@ -428,21 +414,21 @@ function KRBWC__log_event ($filename, $linenum, $message, $prepend_path="", $log
 
    if ($fhandle)
       {
-      @fwrite ($fhandle, "\r\n// " . $_SERVER['REMOTE_ADDR'] . '(' . $_SERVER['REMOTE_PORT'] . ')' . ' -> ' . date("Y-m-d, G:i:s T") . "|" . KRBWC_VERSION . "/" . KRBWC_EDITION . "|$filename($linenum)|: " . $message . $logfile_tail);
+      @fwrite ($fhandle, "\r\n// " . $_SERVER['REMOTE_ADDR'] . '(' . $_SERVER['REMOTE_PORT'] . ')' . ' -> ' . date("Y-m-d, G:i:s T") . "|" . PARSWC_VERSION . "/" . PARSWC_EDITION . "|$filename($linenum)|: " . $message . $logfile_tail);
       @fclose ($fhandle);
       }
 }
 //===========================================================================
 
 //===========================================================================
-function KRBWC__SubIns ()
+function PARSWC__SubIns ()
 {
   return;
 }
 //===========================================================================
 
 //===========================================================================
-function KRBWC__send_email ($email_to, $email_from, $subject, $plain_body)
+function PARSWC__send_email ($email_to, $email_from, $subject, $plain_body)
 {
    $message = "
    <html>
@@ -469,19 +455,19 @@ function KRBWC__send_email ($email_to, $email_from, $subject, $plain_body)
 //===========================================================================
 
 //===========================================================================
-function KRBWC__is_gateway_valid_for_use (&$ret_reason_message=NULL)
+function PARSWC__is_gateway_valid_for_use (&$ret_reason_message=NULL)
 {
   $valid = true;
-  $krbwc_settings = KRBWC__get_settings ();
+  $parswc_settings = PARSWC__get_settings ();
 
 ////   'service_provider'                     =>  'local_wallet',    // 'blockchain_info'
 
   //----------------------------------
   // Validate settings
-  if ($krbwc_settings['service_provider']=='local_wallet')
+  if ($parswc_settings['service_provider']=='local_wallet')
   {         
-          $krbwc_settings = KRBWC__get_settings();
-          $address = $krbwc_settings['address'];
+          $parswc_settings = PARSWC__get_settings();
+          $address = $parswc_settings['address'];
 
           try{
             $wallet_api = New ForkNoteWalletd("http://127.0.0.1:18888");
@@ -492,19 +478,19 @@ function KRBWC__is_gateway_valid_for_use (&$ret_reason_message=NULL)
 
           if (!$address)
           {
-            $reason_message = __("Please specify Wallet Address in Karbo plugin settings.", 'woocommerce');
+            $reason_message = __("Please specify Wallet Address in ParsiCoin plugin settings.", 'woocommerce');
             $valid = false;
           }
           // @TODO
-          // else if (!preg_match ('/^xpub[a-zA-Z0-9]{98}$/', $address))
+          // else if (!preg_match ('/^xpub[a-zA-Z0-9]{97}$/', $address))
           // {
-          //   $reason_message = __("Karbo Address ($address) is invalid. Must be 98 characters long, consisting of digits and letters.", 'woocommerce');
+          //   $reason_message = __("ParsiCoin Address ($address) is invalid. Must be 97 characters long, consisting of digits and letters.", 'woocommerce');
           //   $valid = false;
           // }
 
           else if ($address_balance === false)
           {
-            $reason_message = __("Karbo address is not found in wallet.", 'woocommerce');
+            $reason_message = __("ParsiCoin address is not found in wallet.", 'woocommerce');
             $valid = false;
           }
   }
@@ -522,9 +508,9 @@ function KRBWC__is_gateway_valid_for_use (&$ret_reason_message=NULL)
   // Validate connection to exchange rate services
 
   $store_currency_code = 'USD';
-  if ($store_currency_code != 'KRB')
+  if ($store_currency_code != 'ParsiCoin')
   {
-    $currency_rate = KRBWC__get_exchange_rate_per_Karbo ($store_currency_code, 'getfirst', false);
+    $currency_rate = PARSWC__get_exchange_rate_per_ParsiCoin ($store_currency_code, 'getfirst', false);
     if (!$currency_rate)
     {
       $valid = false;
@@ -533,7 +519,7 @@ function KRBWC__is_gateway_valid_for_use (&$ret_reason_message=NULL)
       $error_msg = "ERROR: Cannot determine exchange rates (for '$store_currency_code')! {{{ERROR_MESSAGE}}} Make sure your PHP settings are configured properly and your server can (is allowed to) connect to external WEB services via PHP.";
       $extra_error_message = "";
       $fns = array ('file_get_contents', 'curl_init', 'curl_setopt', 'curl_setopt_array', 'curl_exec');
-      $fns = array_filter ($fns, 'KRBWC__function_not_exists');
+      $fns = array_filter ($fns, 'PARSWC__function_not_exists');
       $extra_error_message = "";
       if (count($fns))
         $extra_error_message = "The following PHP functions are disabled on your server: " . implode (", ", $fns) . ".";
@@ -555,7 +541,7 @@ function KRBWC__is_gateway_valid_for_use (&$ret_reason_message=NULL)
 //===========================================================================
 // Some hosting services disables base64_encode/decode.
 // this is equivalent replacement to fix errors.
-function KRBWC__base64_decode($input)
+function PARSWC__base64_decode($input)
 {
 	  if (function_exists('base64_decode'))
 	  	return base64_decode($input);
@@ -590,7 +576,7 @@ function KRBWC__base64_decode($input)
     return urldecode($output);
 }
 
-function KRBWC__base64_encode($data)
+function PARSWC__base64_encode($data)
 {
 	  if (function_exists('base64_encode'))
 	  	return base64_encode($data);
@@ -605,27 +591,27 @@ function KRBWC__base64_encode($data)
     }
     do {
     // pack three octets into four hexets
-    $o1 = KRBWC_charCodeAt($data, $i++);
-    $o2 = KRBWC_charCodeAt($data, $i++);
-    $o3 = KRBWC_charCodeAt($data, $i++);
+    $o1 = PARSWC_charCodeAt($data, $i++);
+    $o2 = PARSWC_charCodeAt($data, $i++);
+    $o3 = PARSWC_charCodeAt($data, $i++);
     $bits = $o1 << 16 | $o2 << 8 | $o3;
     $h1 = $bits >> 18 & 0x3f;
     $h2 = $bits >> 12 & 0x3f;
     $h3 = $bits >> 6 & 0x3f;
     $h4 = $bits & 0x3f;
     // use hexets to index into b64, and append result to encoded string
-    $tmp_arr[$ac++] = KRBWC_charAt($b64, $h1).KRBWC_charAt($b64, $h2).KRBWC_charAt($b64, $h3).KRBWC_charAt($b64, $h4);
+    $tmp_arr[$ac++] = PARSWC_charAt($b64, $h1).PARSWC_charAt($b64, $h2).PARSWC_charAt($b64, $h3).PARSWC_charAt($b64, $h4);
     } while ($i < strlen($data));
     $enc = implode($tmp_arr, '');
     $r = (strlen($data) % 3);
     return ($r ? substr($enc, 0, ($r - 3)) : $enc) . substr('===', ($r || 3));
 }
 
-function KRBWC_charCodeAt($data, $char) {
+function PARSWC_charCodeAt($data, $char) {
     return ord(substr($data, $char, 1));
 }
 
-function KRBWC_charAt($data, $char) {
+function PARSWC_charAt($data, $char) {
     return substr($data, $char, 1);
 }
 //===========================================================================
