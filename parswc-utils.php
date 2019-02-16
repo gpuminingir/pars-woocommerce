@@ -245,7 +245,7 @@ function PARSWC__get_exchange_rate_from_cryptocompare ($currency_code, $rate_typ
  $source_url = "https://api.coingecko.com/api/v3/simple/price?ids=parsicoin&vs_currencies=" . $currency_code;
  $result = @PARSWC__file_get_contents ($source_url, false, $parswc_settings['exchange_rate_api_timeout_secs']);
 
- $rate_obj = @json_decode(trim($result), true);
+ $rate_obj = @json_decode(trim($result["parsicoin"]), true);
 
  // Only realtime rate is available
  return @$rate_obj[$currency_code];
